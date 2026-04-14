@@ -92,8 +92,8 @@ code-guardian/
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/YOUR_USERNAME/code-guardian.git
-cd code-guardian
+git clone https://github.com/msanthosh-murugesan/cto-talk-opsera-hackathon.git
+cd cto-talk-opsera-hackathon
 
 # 2. Install backend dependencies
 cd backend
