@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Guardian powered by Santhosh — Security & Architecture Scanner</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0e17;
+            --card: #111827;
+            --border: #1e293b;
+            --border-hover: #334155;
+            --text: #f1f5f9;
+            --text-2: #94a3b8;
+            --text-3: #64748b;
+            --accent: #6366f1;
+            --accent-glow: rgba(99,102,241,0.12);
+            --critical: #ef4444;
+            --high: #f97316;
+            --medium: #eab308;
+            --low: #6b7280;
+            --success: #22c55e;
+            --radius: 12px;
+        }
+
+        body {
+            font-family: 'DM Sans', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        /* ── Header ─────────────────────────────────────── */
+        .header {
+            border-bottom: 1px solid var(--border);
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: rgba(17,24,39,0.85);
+            backdrop-filter: blur(12px);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .header-brand { display: flex; align-items: center; gap: 12px; }
+        .header-brand .icon { font-size: 26px; }
+        .header-brand h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; }
+        .header-brand small { font-size: 11px; color: var(--text-3); display: block; }
+        .header-meta { font-size: 12px; color: var(--text-3); }
+
+        /* ── Layout ──────────────────────────────────────── */
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .grid-5 { display: grid; grid-template-columns: repeat(auto-fit, minmax(100px, 1fr)); gap: 12px; }
+
+        /* ── Cards ───────────────────────────────────────── */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 24px;
+        }
+        .card-label {
+            font-size: 11px; font-weight: 600; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 16px;
+        }
+
+        /* ── Score Gauges ────────────────────────────────── */
+        .gauge { text-align: center; padding: 28px 24px; }
+        .gauge svg { display: block; margin: 0 auto 8px; }
+        .gauge-value { font-size: 28px; font-weight: 700; }
+        .gauge-grade { font-size: 13px; color: var(--text-3); }
+
+        /* ── Stat Cards ──────────────────────────────────── */
+        .stat { text-align: center; padding: 16px 12px; }
+        .stat-value { font-size: 28px; font-weight: 700; }
+        .stat-label { font-size: 10px; color: var(--text-3); text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+        /* ── Scan Input ──────────────────────────────────── */
+        .scan-form {
+            text-align: center; padding: 60px 0;
+        }
+        .scan-form h2 { font-size: 36px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 8px; }
+        .scan-form p { color: var(--text-3); margin-bottom: 32px; }
+        .input-row { display: flex; gap: 8px; max-width: 620px; margin: 0 auto 16px; }
+        .input-row input {
+            flex: 1; padding: 14px 18px; border-radius: 10px;
+            border: 1px solid var(--border); background: var(--card);
+            color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px;
+            outline: none; transition: border-color 0.2s;
+        }
+        .input-row input:focus { border-color: var(--accent); }
+        .btn {
+            padding: 14px 28px; border-radius: 10px; border: none;
+            background: var(--accent); color: #fff; font-weight: 600;
+            font-size: 14px; cursor: pointer; white-space: nowrap;
+            transition: opacity 0.2s;
+        }
+        .btn:hover { opacity: 0.9; }
+        .btn-ghost {
+            background: transparent; border: 1px solid var(--border); color: var(--accent);
+            padding: 10px 20px; font-size: 13px;
+        }
+        .checkbox-row { font-size: 13px; color: var(--text-3); }
+        .checkbox-row input { accent-color: var(--accent); margin-right: 6px; }
+
+        /* ── Progress ────────────────────────────────────── */
+        .progress-bar {
+            width: 320px; height: 6px; border-radius: 3px;
+            background: var(--border); margin: 20px auto; overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%; border-radius: 3px; background: var(--accent);
+            transition: width 0.5s ease-out; width: 0%;
+        }
+        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .pulsing { animation: pulse 2s ease-in-out infinite; }
+
+        /* ── Findings ────────────────────────────────────── */
+        .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+        .filter-btn {
+            padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border);
+            background: transparent; color: var(--text-3); font-size: 12px;
+            cursor: pointer; font-weight: 500; transition: all 0.2s;
+        }
+        .filter-btn.active {
+            border-color: var(--accent); background: var(--accent-glow); color: var(--accent);
+        }
+        .filter-sep { width: 1px; background: var(--border); margin: 0 4px; align-self: stretch; }
+
+        .finding {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px 20px; cursor: pointer;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .finding:hover { border-color: var(--border-hover); box-shadow: 0 2px 12px rgba(0,0,0,0.15); }
+        .finding.border-critical { border-left: 3px solid var(--critical); }
+        .finding.border-high { border-left: 3px solid var(--high); }
+        .finding.border-medium { border-left: 3px solid var(--medium); }
+        .finding.border-low { border-left: 3px solid var(--low); }
+
+        .finding-header { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .finding-title { font-weight: 600; font-size: 14px; flex: 1; }
+        .finding-toggle { color: var(--text-3); font-size: 12px; }
+        .finding-file { font-size: 12px; color: var(--text-3); font-family: 'JetBrains Mono', monospace; margin-top: 4px; }
+
+        .finding-body { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); display: none; }
+        .finding.expanded .finding-body { display: block; }
+        .finding-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 10px; }
+        .finding-code {
+            background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px;
+            font-size: 12px; overflow: auto; color: #e2e8f0; margin: 8px 0;
+            border: 1px solid var(--border); font-family: 'JetBrains Mono', monospace;
+            white-space: pre-wrap;
+        }
+        .finding-fix {
+            background: rgba(34,197,94,0.08); border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 8px; padding: 10px 14px; margin-top: 8px;
+        }
+        .finding-fix .label { font-weight: 600; color: var(--success); font-size: 12px; }
+        .finding-fix .text { font-size: 13px; color: var(--text-2); }
+        .finding-tags { margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap; }
+        .tag {
+            padding: 2px 8px; border-radius: 4px; font-size: 10px;
+            background: rgba(99,102,241,0.12); color: #818cf8; font-weight: 500;
+        }
+
+        .badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 3px 10px; border-radius: 6px; font-size: 11px; font-weight: 600;
+            letter-spacing: 0.03em; text-transform: uppercase;
+        }
+        .badge-critical { background: rgba(239,68,68,0.12); color: var(--critical); }
+        .badge-high { background: rgba(249,115,22,0.12); color: var(--high); }
+        .badge-medium { background: rgba(234,179,8,0.12); color: var(--medium); }
+        .badge-low { background: rgba(107,114,128,0.12); color: var(--low); }
+
+        .section-title {
+            font-size: 16px; font-weight: 700; margin-bottom: 16px;
+            display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+        }
+
+        .mb-16 { margin-bottom: 16px; }
+        .mb-24 { margin-bottom: 24px; }
+        .mb-32 { margin-bottom: 32px; }
+        .mt-32 { margin-top: 32px; }
+        .mt-40 { margin-top: 40px; }
+        .text-center { text-align: center; }
+        .gap-10 > * + * { margin-top: 10px; }
+
+        .hidden { display: none; }
+    </style>
+</head>
+<body>
+
+<!-- Header -->
+<header class="header">
+    <div class="header-brand">
+        <span class="icon">⛨</span>
+        <div>
+            <h1>Code Guardian</h1>
+            <small>By Santhosh Murugesan, Full Creative Pvt.Ltd.</small>
+        </div>
+    </div>
+    <div class="header-meta" id="header-target"></div>
+</header>
+
+<div class="container">
+    <!-- Scan Form -->
+    <div id="scan-form" class="scan-form">
+        <h2>Scan Your Codebase</h2>
+        <p>Enter a GitHub URL or local path to run security & architecture analysis</p>
+        <div class="input-row">
+            <input type="text" id="target-input" placeholder="https://github.com/user/repo or ./local-project">
+            <button class="btn" onclick="startScan()">🔍 Scan Now</button>
+        </div>
+        <label class="checkbox-row">
+            <input type="checkbox" id="mock-check" checked>
+            Mock mode (demo data — no agent installation required)
+        </label>
+        <div class="mt-40">
+            <button class="btn btn-ghost" onclick="loadDemo()">▶ Load Demo Report</button>
+        </div>
+    </div>
+
+    <!-- Loading -->
+    <div id="loading" class="hidden text-center" style="padding:80px 0">
+        <div class="pulsing" style="font-size:48px;margin-bottom:24px">⛨</div>
+        <h3>Scanning in progress...</h3>
+        <p style="color:var(--text-3);text-transform:capitalize;margin-bottom:0" id="status-text">Initializing</p>
+        <div class="progress-bar"><div class="progress-fill" id="progress-fill"></div></div>
+        <p style="color:var(--text-3);font-size:13px" id="progress-pct">0%</p>
+    </div>
+
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Score Gauges -->
+        <div class="grid-3 mb-24" id="gauges"></div>
+
+        <!-- Summary Stats -->
+        <div class="grid-5 mb-24" id="stats"></div>
+
+        <!-- Charts -->
+        <div class="grid-3 mb-32">
+            <div class="card">
+                <div class="card-label">Severity Breakdown</div>
+                <canvas id="severity-pie" height="220"></canvas>
+            </div>
+            <div class="card">
+                <div class="card-label">Issues by Category</div>
+                <canvas id="category-bar" height="220"></canvas>
+            </div>
+            <div class="card">
+                <div class="card-label">Issue Types</div>
+                <canvas id="type-bar" height="220"></canvas>
+            </div>
+        </div>
+
+        <!-- Findings -->
+        <div>
+            <div class="section-title">
+                <span>All Findings (<span id="finding-count">0</span>)</span>
+                <div class="filters" id="filters"></div>
+            </div>
+            <div class="gap-10" id="findings-list"></div>
+        </div>
+
+        <div class="text-center mt-40" style="padding-bottom:40px">
+            <button class="btn btn-ghost" onclick="resetView()">← Run Another Scan</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────────────
+// Use relative path when served from backend; fallback to localhost for file:// access
+const API_BASE = window.location.protocol === 'file:' ? 'http://localhost:8000' : '';
+let currentReport = null;
+let activeFilter = 'all';
+let activeCat = 'all';
+let charts = {};
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function scoreColor(s) { return s >= 80 ? '#22c55e' : s >= 60 ? '#eab308' : s >= 40 ? '#f97316' : '#ef4444'; }
+function scoreGrade(s) { return s >= 90 ? 'A' : s >= 80 ? 'B' : s >= 70 ? 'C' : s >= 60 ? 'D' : 'F'; }
+
+function show(id) { document.getElementById(id).classList.remove('hidden'); }
+function hide(id) { document.getElementById(id).classList.add('hidden'); }
+
+// ── Scan Flow ─────────────────────────────────────────────────────────────────
+async function startScan() {
+    const target = document.getElementById('target-input').value.trim();
+    const mock = document.getElementById('mock-check').checked;
+    if (!target) return;
+
+    hide('scan-form'); show('loading');
+
+    try {
+        const res = await fetch(`${API_BASE}/scan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ target, mock_mode: mock }),
+        });
+        const data = await res.json();
+        pollScan(data.job_id);
+    } catch {
+        loadDemo();
+    }
+}
+
+async function pollScan(jobId) {
+    const poll = setInterval(async () => {
+        try {
+            const res = await fetch(`${API_BASE}/scan/${jobId}`);
+            const data = await res.json();
+            updateProgress(data.progress, data.status);
+
+            if (data.status === 'completed') {
+                clearInterval(poll);
+                const rr = await fetch(`${API_BASE}/report/${jobId}`);
+                renderReport(await rr.json());
+            } else if (data.status === 'failed') {
+                clearInterval(poll);
+                alert('Scan failed: ' + (data.error || 'Unknown error'));
+                resetView();
+            }
+        } catch { clearInterval(poll); loadDemo(); }
+    }, 1000);
+}
+
+function updateProgress(pct, status) {
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('progress-pct').textContent = pct + '%';
+    document.getElementById('status-text').textContent = status;
+}
+
+function loadDemo() {
+    hide('scan-form'); show('loading');
+    const steps = [10, 30, 50, 70, 85, 95, 100];
+    const labels = ['cloning', 'scanning', 'scanning', 'analyzing', 'analyzing', 'finalizing', 'completed'];
+    steps.forEach((p, i) => {
+        setTimeout(() => {
+            updateProgress(p, labels[i]);
+            if (p === 100) renderReport(DEMO_REPORT);
+        }, (i + 1) * 350);
+    });
+}
+
+function resetView() {
+    currentReport = null;
+    hide('dashboard'); hide('loading'); show('scan-form');
+    document.getElementById('header-target').textContent = '';
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderReport(report) {
+    currentReport = report;
+    hide('loading'); show('dashboard');
+    document.getElementById('header-target').textContent = 'Scanned: ' + report.target;
+
+    renderGauges(report.scores);
+    renderStats(report.summary);
+    renderCharts(report);
+    renderFilters();
+    renderFindings();
+}
+
+function renderGauges(scores) {
+    const items = [
+        { label: 'Security Score', score: scores.security_score, icon: '🛡️' },
+        { label: 'Architecture Score', score: scores.architecture_score, icon: '🏗️' },
+        { label: 'Combined Score', score: scores.combined_score, icon: '⛨' },
+    ];
+    document.getElementById('gauges').innerHTML = items.map(g => {
+        const color = scoreColor(g.score);
+        const circ = 2 * Math.PI * 54;
+        const offset = circ - (g.score / 100) * circ;
+        return `<div class="card gauge">
+            <div class="card-label">${g.icon} ${g.label}</div>
+            <svg width="128" height="128" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="54" fill="none" stroke="var(--border)" stroke-width="8"/>
+                <circle cx="60" cy="60" r="54" fill="none" stroke="${color}" stroke-width="8"
+                    stroke-dasharray="${circ}" stroke-dashoffset="${offset}" stroke-linecap="round"
+                    transform="rotate(-90 60 60)" style="transition:stroke-dashoffset 1.2s ease-out"/>
+                <text x="60" y="54" text-anchor="middle" fill="${color}" font-size="28" font-weight="700">${g.score}</text>
+                <text x="60" y="74" text-anchor="middle" fill="var(--text-3)" font-size="13">Grade ${scoreGrade(g.score)}</text>
+            </svg>
+        </div>`;
+    }).join('');
+}
+
+function renderStats(summary) {
+    const items = [
+        { label: 'Total Issues', value: summary.total_issues, color: 'var(--text)' },
+        { label: 'Critical', value: summary.critical, color: 'var(--critical)' },
+        { label: 'High', value: summary.high, color: 'var(--high)' },
+        { label: 'Medium', value: summary.medium, color: 'var(--medium)' },
+        { label: 'Low', value: summary.low, color: 'var(--low)' },
+    ];
+    document.getElementById('stats').innerHTML = items.map(s =>
+        `<div class="card stat">
+            <div class="stat-value" style="color:${s.color}">${s.value}</div>
+            <div class="stat-label">${s.label}</div>
+        </div>`
+    ).join('');
+}
+
+function renderCharts(report) {
+    Object.values(charts).forEach(c => c.destroy());
+    charts = {};
+
+    const chartOpts = {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#94a3b8', font: { size: 11 } } } },
+    };
+
+    // Severity Pie
+    const sevData = [
+        { label: 'Critical', value: report.summary.critical, color: '#ef4444' },
+        { label: 'High', value: report.summary.high, color: '#f97316' },
+        { label: 'Medium', value: report.summary.medium, color: '#eab308' },
+        { label: 'Low', value: report.summary.low, color: '#6b7280' },
+    ].filter(d => d.value > 0);
+
+    charts.severity = new Chart(document.getElementById('severity-pie'), {
+        type: 'doughnut',
+        data: {
+            labels: sevData.map(d => d.label),
+            datasets: [{ data: sevData.map(d => d.value), backgroundColor: sevData.map(d => d.color), borderWidth: 0 }],
+        },
+        options: { ...chartOpts, cutout: '60%' },
+    });
+
+    // Category Bar
+    charts.category = new Chart(document.getElementById('category-bar'), {
+        type: 'bar',
+        data: {
+            labels: ['Security', 'Architecture'],
+            datasets: [{
+                data: [report.summary.security_issues, report.summary.architecture_issues],
+                backgroundColor: ['#6366f1', '#8b5cf6'],
+                borderRadius: 6, barPercentage: 0.5,
+            }],
+        },
+        options: {
+            ...chartOpts,
+            plugins: { ...chartOpts.plugins, legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { display: false } },
+                y: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, beginAtZero: true },
+            },
+        },
+    });
+
+    // Type distribution
+    const typeCounts = {};
+    report.findings.forEach(f => {
+        const type = (f.tags && f.tags[f.tags.length - 1]) || 'other';
+        typeCounts[type] = (typeCounts[type] || 0) + 1;
+    });
+    const typeData = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]).slice(0, 7);
+
+    charts.types = new Chart(document.getElementById('type-bar'), {
+        type: 'bar',
+        data: {
+            labels: typeData.map(d => d[0].replace(/-/g, ' ')),
+            datasets: [{
+                data: typeData.map(d => d[1]),
+                backgroundColor: '#8b5cf6', borderRadius: 4, barPercentage: 0.6,
+            }],
+        },
+        options: {
+            ...chartOpts, indexAxis: 'y',
+            plugins: { ...chartOpts.plugins, legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: '#1e293b' }, beginAtZero: true },
+                y: { ticks: { color: '#94a3b8', font: { size: 10 } }, grid: { display: false } },
+            },
+        },
+    });
+}
+
+function renderFilters() {
+    const sevs = ['all', 'critical', 'high', 'medium', 'low'];
+    const cats = [
+        { key: 'all', label: 'All Types' },
+        { key: 'security', label: '🛡️ Security' },
+        { key: 'architecture', label: '🏗️ Architecture' },
+    ];
+
+    document.getElementById('filters').innerHTML =
+        sevs.map(s => `<button class="filter-btn ${activeFilter === s ? 'active' : ''}" onclick="setFilter('${s}')">${s}</button>`).join('') +
+        '<span class="filter-sep"></span>' +
+        cats.map(c => `<button class="filter-btn ${activeCat === c.key ? 'active' : ''}" onclick="setCat('${c.key}')">${c.label}</button>`).join('');
+}
+
+function setFilter(f) { activeFilter = f; renderFilters(); renderFindings(); }
+function setCat(c) { activeCat = c; renderFilters(); renderFindings(); }
+
+function renderFindings() {
+    if (!currentReport) return;
+    const filtered = currentReport.findings.filter(f => {
+        return (activeFilter === 'all' || f.severity === activeFilter) &&
+               (activeCat === 'all' || f.category === activeCat);
+    });
+
+    document.getElementById('finding-count').textContent = filtered.length;
+
+    const icons = { security: '🛡️', architecture: '🏗️' };
+    const sevIcons = { critical: '🔴', high: '🟠', medium: '🟡', low: '⚪' };
+
+    document.getElementById('findings-list').innerHTML = filtered.map(f => {
+        const tags = f.rule_id ? f.rule_id.split(' | ').map(t => `<span class="tag">${t}</span>`).join('') : '';
+        return `<div class="finding border-${f.severity}" onclick="this.classList.toggle('expanded')">
+            <div class="finding-header">
+                <span>${icons[f.category] || '📋'}</span>
+                <span class="badge badge-${f.severity}">${sevIcons[f.severity] || ''} ${f.severity}</span>
+                <span class="finding-title">${f.title}</span>
+                <span class="finding-toggle">▼</span>
+            </div>
+            ${f.file_path ? `<div class="finding-file">📁 ${f.file_path}${f.line_number ? ':' + f.line_number : ''}</div>` : ''}
+            <div class="finding-body">
+                <p class="finding-desc">${f.description}</p>
+                ${f.code_snippet ? `<pre class="finding-code">${f.code_snippet}</pre>` : ''}
+                ${f.fix_suggestion ? `<div class="finding-fix"><span class="label">💡 FIX: </span><span class="text">${f.fix_suggestion}</span></div>` : ''}
+                ${tags ? `<div class="finding-tags">${tags}</div>` : ''}
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ── Demo Data ─────────────────────────────────────────────────────────────────
+const DEMO_REPORT = {
+    job_id: "demo-001",
+    target: "https://github.com/example/demo-app",
+    created_at: new Date().toISOString(),
+    scores: { security_score: 38, architecture_score: 52, combined_score: 44 },
+    summary: { total_issues: 18, critical: 3, high: 5, medium: 5, low: 2, security_issues: 10, architecture_issues: 8 },
+    findings: [
+        { id:"SEC-001", category:"security", severity:"critical", title:"SQL Injection in user query handler", description:"User input is concatenated directly into SQL query string without parameterization. An attacker could manipulate the query to access or modify unauthorized data.", file_path:"src/database/queries.py", line_number:42, rule_id:"A03:2021-Injection | CWE-89 | sql-injection", fix_suggestion:"Use parameterized queries: cursor.execute('SELECT * FROM users WHERE id = %s', (user_id,))", tags:["A03:2021-Injection","CWE-89","vulnerability","sql-injection"], confidence:0.95, code_snippet:'query = f"SELECT * FROM users WHERE id = {user_id}"' },
+        { id:"SEC-003", category:"security", severity:"critical", title:"Hardcoded API key in source code", description:"An API key is hardcoded directly in the source file. If committed to a public repo, the key is exposed.", file_path:"src/config/api.py", line_number:7, rule_id:"A02:2021-Cryptographic Failures | CWE-798 | hardcoded-secret", fix_suggestion:"Move secrets to environment variables or a secrets manager.", tags:["A02:2021-Cryptographic Failures","CWE-798","secret","hardcoded-secret"], confidence:0.99, code_snippet:"API_KEY = 'sk-live-a1b2c3d4e5f6789...'" },
+        { id:"ARCH-002", category:"architecture", severity:"critical", title:"Circular dependency between modules", description:"models/user.py imports from services/auth.py, which imports from models/user.py, creating a circular dependency.", file_path:"src/models/user.py", line_number:3, rule_id:"circular-dependency", fix_suggestion:"Extract shared types into a separate 'schemas' module. Use dependency injection to break the cycle.", tags:["anti-pattern","circular-dependency"], confidence:0.97 },
+        { id:"SEC-002", category:"security", severity:"high", title:"Reflected XSS in search endpoint", description:"User-supplied search parameter is rendered in HTML response without escaping.", file_path:"src/routes/search.js", line_number:18, rule_id:"A07:2021-XSS | CWE-79 | xss-reflected", fix_suggestion:"Sanitize output using DOMPurify or escape HTML entities before rendering.", tags:["A07:2021-XSS","CWE-79","vulnerability","xss-reflected"], confidence:0.92, code_snippet:"res.send(`<h1>Results for: ${req.query.q}</h1>`)" },
+        { id:"SEC-004", category:"security", severity:"high", title:"Known vulnerability in lodash@4.17.15", description:"Prototype pollution vulnerability (CVE-2020-28500) in installed lodash version.", file_path:"package.json", line_number:12, rule_id:"A06:2021-Vulnerable Components | CWE-1035", fix_suggestion:"Upgrade: npm install lodash@latest", tags:["A06:2021-Vulnerable Components","CWE-1035","dependency","vulnerable-dependency"], confidence:0.98 },
+        { id:"SEC-006", category:"security", severity:"high", title:"Path traversal in file download handler", description:"User-controlled filename used without validation, allowing directory traversal.", file_path:"src/routes/files.js", line_number:25, rule_id:"A01:2021-Broken Access Control | CWE-22", fix_suggestion:"Validate the resolved path stays within the uploads directory.", tags:["A01:2021-Broken Access Control","CWE-22","vulnerability","path-traversal"], confidence:0.91 },
+        { id:"SEC-010", category:"security", severity:"high", title:"Server-Side Request Forgery in URL fetch", description:"User-provided URL passed directly to HTTP client without validation.", file_path:"src/services/fetcher.py", line_number:20, rule_id:"A10:2021-SSRF | CWE-918", fix_suggestion:"Validate URLs against an allowlist and block private IP ranges.", tags:["A10:2021-SSRF","CWE-918","vulnerability","ssrf"], confidence:0.89 },
+        { id:"ARCH-001", category:"architecture", severity:"high", title:"God Class detected: UserService", description:"UserService handles 5+ responsibilities across 847 lines and 32 methods.", file_path:"src/services/user_service.py", line_number:1, rule_id:"god-class", fix_suggestion:"Decompose into AuthService, ProfileService, NotificationService, PaymentService.", tags:["anti-pattern","god-class"], confidence:0.93 },
+        { id:"ARCH-003", category:"architecture", severity:"high", title:"Excessive complexity in process_order()", description:"Cyclomatic complexity of 24 with 6 levels of nesting.", file_path:"src/services/order_service.py", line_number:45, rule_id:"high-complexity-function", fix_suggestion:"Apply Strategy pattern. Extract validation, pricing, notification into separate functions.", tags:["complexity","high-complexity-function"], confidence:0.90 },
+        { id:"SEC-005", category:"security", severity:"medium", title:"Unsafe pickle deserialization", description:"pickle.loads() on untrusted data can execute arbitrary code.", file_path:"src/utils/cache.py", line_number:33, rule_id:"A08:2021-Integrity Failures | CWE-502", fix_suggestion:"Use json.loads() for untrusted data.", tags:["A08:2021-Integrity Failures","CWE-502","vulnerability","insecure-deserialization"], confidence:0.88 },
+        { id:"SEC-007", category:"security", severity:"medium", title:"Admin endpoint lacks authentication", description:"The /admin/users endpoint has no auth middleware.", file_path:"src/routes/admin.py", line_number:15, rule_id:"A01:2021-Broken Access Control | CWE-862", fix_suggestion:"Add auth middleware: dependencies=[Depends(require_admin)]", tags:["A01:2021-Broken Access Control","CWE-862","vulnerability","missing-auth"], confidence:0.85 },
+        { id:"SEC-009", category:"security", severity:"medium", title:"MD5 used for password hashing", description:"MD5 is broken for password storage.", file_path:"src/auth/passwords.py", line_number:12, rule_id:"A02:2021-Cryptographic Failures | CWE-327", fix_suggestion:"Use bcrypt or argon2.", tags:["A02:2021-Cryptographic Failures","CWE-327","vulnerability","weak-crypto"], confidence:0.95 },
+        { id:"ARCH-004", category:"architecture", severity:"medium", title:"Direct database calls in route handlers", description:"Routes make direct SQL queries instead of using a repository layer.", file_path:"src/api/routes.py", line_number:22, rule_id:"tight-coupling", fix_suggestion:"Introduce Repository pattern.", tags:["anti-pattern","tight-coupling"], confidence:0.88 },
+        { id:"ARCH-005", category:"architecture", severity:"medium", title:"No error handling abstraction", description:"23 scattered try/except blocks with inconsistent formats.", file_path:"src/", rule_id:"missing-abstraction", fix_suggestion:"Create custom exception hierarchy + centralized handler.", tags:["design","missing-abstraction"], confidence:0.85 },
+        { id:"ARCH-006", category:"architecture", severity:"medium", title:"Hard-coded dependencies prevent testing", description:"Services create their own dependencies instead of accepting them.", file_path:"src/services/", rule_id:"no-dependency-injection", fix_suggestion:"Use constructor injection or FastAPI's Depends().", tags:["anti-pattern","no-dependency-injection"], confidence:0.87 },
+        { id:"ARCH-007", category:"architecture", severity:"medium", title:"No separation between business logic and I/O", description:"Business rules mixed with database and HTTP calls.", file_path:"src/services/", rule_id:"missing-layer", fix_suggestion:"Adopt Hexagonal architecture.", tags:["structure","missing-layer"], confidence:0.91 },
+        { id:"SEC-008", category:"security", severity:"low", title:"CORS allows all origins", description:"Wildcard CORS in production.", file_path:"src/app.py", line_number:8, rule_id:"A05:2021-Security Misconfiguration | CWE-942", fix_suggestion:"Restrict to known origins.", tags:["A05:2021-Security Misconfiguration","CWE-942","configuration","cors-wildcard"], confidence:0.80 },
+        { id:"ARCH-008", category:"architecture", severity:"low", title:"Configuration sprawl", description:"Config values hardcoded in 9 files.", file_path:"src/", rule_id:"config-sprawl", fix_suggestion:"Centralize using pydantic-settings.", tags:["configuration","config-sprawl"], confidence:0.82 },
+    ],
+};
+</script>
+</body>
+</html>
