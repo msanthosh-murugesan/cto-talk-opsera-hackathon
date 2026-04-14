@@ -1,7 +1,6 @@
 __pycache__/
 *.pyc
 .env
-reports/*.json
 node_modules/
 .venv/
 venv/

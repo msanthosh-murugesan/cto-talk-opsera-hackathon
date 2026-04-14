@@ -1,0 +1,119 @@
+{
+  "job_id": "814fab6c2438",
+  "target": "https://github.com/msanthosh-murugesan/ci-cd-final-project",
+  "created_at": "2026-04-14T17:07:28.388554+00:00",
+  "scores": {
+    "security_score": 99,
+    "architecture_score": 99,
+    "combined_score": 99
+  },
+  "findings": [
+    {
+      "id": "SEC-001",
+      "category": "security",
+      "severity": "low",
+      "risk_weight": 1,
+      "title": "Review CORS configuration",
+      "description": "Ensure CORS policies are appropriately configured for production deployment.",
+      "file_path": "config",
+      "line_number": 1,
+      "rule_id": "A05:2021-Security Misconfiguration | CWE-942 | cors-wildcard",
+      "fix_suggestion": "Restrict CORS to known frontend origins.",
+      "tags": [
+        "A05:2021-Security Misconfiguration",
+        "CWE-942",
+        "configuration",
+        "cors-wildcard"
+      ],
+      "confidence": 0.88,
+      "code_snippet": "",
+      "source_agent": "opsera-security"
+    },
+    {
+      "id": "ARCH-001",
+      "category": "architecture",
+      "severity": "low",
+      "risk_weight": 1,
+      "title": "Architecture review recommended",
+      "description": "Scanned 6 source files. Consider a periodic architecture review to ensure separation of concerns and maintainability.",
+      "file_path": "project-wide",
+      "line_number": null,
+      "rule_id": "review-needed",
+      "fix_suggestion": "Document the high-level architecture and review it quarterly.",
+      "tags": [
+        "design",
+        "review-needed"
+      ],
+      "confidence": 0.77,
+      "metrics": {
+        "source_files": 6
+      },
+      "source_agent": "opsera-architecture"
+    }
+  ],
+  "summary": {
+    "total_issues": 2,
+    "critical": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 2,
+    "security_issues": 1,
+    "architecture_issues": 1
+  },
+  "raw_security": {
+    "agent": "code-guardian-security",
+    "scan_id": "sec-4c8ebdef-9064",
+    "status": "completed",
+    "scanned_files": 11,
+    "scan_duration_ms": 4253,
+    "findings": [
+      {
+        "id": "SEC-001",
+        "type": "configuration",
+        "rule": "cors-wildcard",
+        "owasp": "A05:2021-Security Misconfiguration",
+        "cwe": "CWE-942",
+        "severity": "low",
+        "title": "Review CORS configuration",
+        "description": "Ensure CORS policies are appropriately configured for production deployment.",
+        "file": "config",
+        "line": 1,
+        "code_snippet": "",
+        "fix": "Restrict CORS to known frontend origins.",
+        "confidence": 0.88
+      }
+    ]
+  },
+  "raw_architecture": {
+    "agent": "code-guardian-architecture",
+    "review_id": "arch-4c8ebdef-4565",
+    "status": "completed",
+    "analyzed_files": 6,
+    "review_duration_ms": 6729,
+    "metrics": {
+      "avg_cyclomatic_complexity": 3.8,
+      "max_cyclomatic_complexity": 9,
+      "avg_cognitive_complexity": 4.8,
+      "coupling_score": 0.33,
+      "cohesion_score": 0.54,
+      "dependency_depth": 3
+    },
+    "findings": [
+      {
+        "id": "ARCH-001",
+        "type": "design",
+        "pattern": "review-needed",
+        "severity": "low",
+        "title": "Architecture review recommended",
+        "description": "Scanned 6 source files. Consider a periodic architecture review to ensure separation of concerns and maintainability.",
+        "file": "project-wide",
+        "line": null,
+        "metrics": {
+          "source_files": 6
+        },
+        "suggestion": "Document the high-level architecture and review it quarterly.",
+        "confidence": 0.77
+      }
+    ]
+  }
+}
